@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaTrader Account Info</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .info {
+            margin-bottom: 20px;
+        }
+        .info p {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+        .trades {
+            list-style: none;
+            padding: 0;
+        }
+        .trades li {
+            background-color: #e9e9e9;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MetaTrader Account Info</h1>
+        <div class="info">
+            <p><strong>Balance:</strong> <span id="balance">Loading...</span></p>
+            <p><strong>Equity:</strong> <span id="equity">Loading...</span></p>
+            <p><strong>Margin Level:</strong> <span id="margin-level">Loading...</span></p>
+        </div>
+
+        <h2>Open Trades</h2>
+        <ul id="trades-list" class="trades"></ul>
+    </div>
+
+    <script>
+        const balanceEl = document.getElementById("balance");
+        const equityEl = document.getElementById("equity");
+        const marginLevelEl = document.getElementById("margin-level");
+        const tradesListEl = document.getElementById("trades-list");
+
+        // اتصال به WebSocket
+        const ws = new WebSocket("ws://localhost:8765");
+
+        ws.onopen = function(event) {
+            console.log("Connected to WebSocket");
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const accountInfo = data.account_info;
+            const trades = data.open_trades;
+
+            // به‌روزرسانی اطلاعات اکانت
+            balanceEl.textContent = accountInfo.balance.toFixed(2);
+            equityEl.textContent = accountInfo.equity.toFixed(2);
+            marginLevelEl.textContent = accountInfo.margin_level.toFixed(2);
+
+            // به‌روزرسانی لیست معاملات
+            tradesListEl.innerHTML = "";
+            trades.forEach(trade => {
+                const li = document.createElement("li");
+                li.textContent = `Symbol: ${trade.symbol}, Volume: ${trade.volume}, Open Price: ${trade.price_open}`;
+                tradesListEl.appendChild(li);
+            });
+        };
+
+        ws.onerror = function(event) {
+            console.error("WebSocket error observed:", event);
+        };
+
+        ws.onclose = function(event) {
+            console.log("WebSocket connection closed");
+        };
+    </script>
+</body>
+</html>
